@@ -42,10 +42,9 @@ import com.alibaba.dubbo.config.annotation.Service;
 import com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory;
 
 /**
- * ServiceFactoryBean
- * 
- * @author william.liangf
- * @export
+ * 定义了一个需要暴露的服务
+ * 当spring启动的时候，此bean会触发方法afterPropertiesSet
+ *
  */
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener, BeanNameAware {
 

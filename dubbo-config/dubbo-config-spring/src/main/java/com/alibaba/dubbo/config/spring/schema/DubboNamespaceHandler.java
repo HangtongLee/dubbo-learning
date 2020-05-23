@@ -41,9 +41,16 @@ public class DubboNamespaceHandler extends NamespaceHandlerSupport {
 		Version.checkDuplicate(DubboNamespaceHandler.class);
 	}
 
+    /**
+     * 从这里开始，此类继承了spring的NamespaceHandlerSupport，开始对dubbo自定义的标签进行解析
+     * 这里要注意解析的顺序，涉及到配置参数的优先级规则
+     */
 	public void init() {
+	    // 解析application标签
 	    registerBeanDefinitionParser("application", new DubboBeanDefinitionParser(ApplicationConfig.class, true));
+	    // 解析 module 标签
         registerBeanDefinitionParser("module", new DubboBeanDefinitionParser(ModuleConfig.class, true));
+	    // 解析 registry 标签
         registerBeanDefinitionParser("registry", new DubboBeanDefinitionParser(RegistryConfig.class, true));
         registerBeanDefinitionParser("monitor", new DubboBeanDefinitionParser(MonitorConfig.class, true));
         registerBeanDefinitionParser("provider", new DubboBeanDefinitionParser(ProviderConfig.class, true));

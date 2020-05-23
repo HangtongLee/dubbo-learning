@@ -15,28 +15,6 @@
  */
 package com.alibaba.dubbo.config.spring.schema;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import org.springframework.beans.PropertyValue;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.config.TypedStringValue;
-import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.beans.factory.support.ManagedMap;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
-import org.springframework.beans.factory.xml.ParserContext;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.logger.Logger;
@@ -53,12 +31,31 @@ import com.alibaba.dubbo.config.RegistryConfig;
 import com.alibaba.dubbo.config.spring.ReferenceBean;
 import com.alibaba.dubbo.config.spring.ServiceBean;
 import com.alibaba.dubbo.rpc.Protocol;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.springframework.beans.factory.config.TypedStringValue;
+import org.springframework.beans.factory.support.ManagedList;
+import org.springframework.beans.factory.support.ManagedMap;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.beans.factory.xml.BeanDefinitionParser;
+import org.springframework.beans.factory.xml.ParserContext;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
- * AbstractBeanDefinitionParser
- * 
- * @author william.liangf
- * @export
+ * dubbo标签解析类
+ *
  */
 public class DubboBeanDefinitionParser implements BeanDefinitionParser {
     
@@ -76,16 +73,27 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
     public BeanDefinition parse(Element element, ParserContext parserContext) {
         return parse(element, parserContext, beanClass, required);
     }
-    
+
+    /**
+     * 开始解析
+     * @param element
+     * @param parserContext
+     * @param beanClass
+     * @param required
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private static BeanDefinition parse(Element element, ParserContext parserContext, Class<?> beanClass, boolean required) {
+        // 定义一个spring的RootBeanDefinition
         RootBeanDefinition beanDefinition = new RootBeanDefinition();
         beanDefinition.setBeanClass(beanClass);
         beanDefinition.setLazyInit(false);
+        // 先获取id
         String id = element.getAttribute("id");
         if ((id == null || id.length() == 0) && required) {
         	String generatedBeanName = element.getAttribute("name");
         	if (generatedBeanName == null || generatedBeanName.length() == 0) {
+        	    // 如果当前是ProtocolConfig类，并且没有指定id和name，则默认给 dubbo
         	    if (ProtocolConfig.class.equals(beanClass)) {
         	        generatedBeanName = "dubbo";
         	    } else {
@@ -97,17 +105,22 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         	}
             id = generatedBeanName; 
             int counter = 2;
+            // 存在，往后面加数字
             while(parserContext.getRegistry().containsBeanDefinition(id)) {
                 id = generatedBeanName + (counter ++);
             }
         }
         if (id != null && id.length() > 0) {
+            // 重复了，则抛个异常
             if (parserContext.getRegistry().containsBeanDefinition(id))  {
         		throw new IllegalStateException("Duplicate spring bean id " + id);
         	}
+            // 注册下bean
             parserContext.getRegistry().registerBeanDefinition(id, beanDefinition);
+            // 记录下属性id
             beanDefinition.getPropertyValues().addPropertyValue("id", id);
         }
+        // 当前类是 ProtocolConfig.class
         if (ProtocolConfig.class.equals(beanClass)) {
             for (String name : parserContext.getRegistry().getBeanDefinitionNames()) {
                 BeanDefinition definition = parserContext.getRegistry().getBeanDefinition(name);
@@ -135,6 +148,10 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         }
         Set<String> props = new HashSet<String>();
         ManagedMap parameters = null;
+        /**
+         * 遍历每个set方法，public，仅有一个参数
+         *
+         */
         for (Method setter : beanClass.getMethods()) {
             String name = setter.getName();
             if (name.length() > 3 && name.startsWith("set")
@@ -235,6 +252,10 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 }
             }
         }
+
+        /**
+         * 不符合上面条件，放到parameters里
+         */
         NamedNodeMap attributes = element.getAttributes();
         int len = attributes.getLength();
         for (int i = 0; i < len; i++) {
