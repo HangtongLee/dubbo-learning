@@ -242,6 +242,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (path == null || path.length() == 0) {
             path = interfaceName;
         }
+        /**
+         * 开始暴露服务
+         */
         doExportUrls();
     }
 
@@ -279,7 +282,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void doExportUrls() {
+        /**
+         * 加载注册中心
+         */
         List<URL> registryURLs = loadRegistries(true);
+        /**
+         * 按照协议，进行服务暴露
+         */
         for (ProtocolConfig protocolConfig : protocols) {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
@@ -287,6 +296,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         String name = protocolConfig.getName();
+        // 默认是dubbo
         if (name == null || name.length() == 0) {
             name = "dubbo";
         }
@@ -337,6 +347,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (port == null || port == 0) {
             port = defaultPort;
         }
+        /**
+         * 未指定端口号，走随机生成
+         */
         if (port == null || port <= 0) {
             port = getRandomPort(name);
             if (port == null || port < 0) {
@@ -356,6 +369,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (ConfigUtils.getPid() > 0) {
             map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
         }
+        /**
+         * 往map里追加参数
+         */
         appendParameters(map, application);
         appendParameters(map, module);
         appendParameters(map, provider, Constants.DEFAULT_KEY);
@@ -417,6 +433,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             } // end of methods for
         }
 
+        /**
+         * 如果是泛化调用
+         */
         if (ProtocolUtils.isGeneric(generic)) {
             map.put("generic", generic);
             map.put("methods", Constants.ANY_VALUE);
@@ -435,6 +454,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put("methods", StringUtils.join(new HashSet<String>(Arrays.asList(methods)), ","));
             }
         }
+        /**
+         * token不为空，则随机生成一个
+         */
         if (! ConfigUtils.isEmpty(token)) {
             if (ConfigUtils.isDefault(token)) {
                 map.put("token", UUID.randomUUID().toString());
